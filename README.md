@@ -70,17 +70,24 @@ day 53 so it never expires silently.
 
 ## Schedule
 
-GitHub cron is **UTC**; the times below assume you are on CEST (UTC+2).
+GitHub cron is **UTC**. Author is on MSK (UTC+3); the audience is EU/US.
 
-| Workflow | UTC | Local | Does |
-|----------|-----|-------|------|
-| `harvest` | 04:47 daily | 06:47 | fetch feeds, score new items |
-| `draft` | 05:07 Mon/Wed/Fri | 07:07 | write two variants, send for approval |
-| `approve` | every 20 min, 05–21 | 07–23 | apply your Telegram taps |
-| `publish` | 07:17 Tue/Thu/Sat | 09:17 | post the oldest approved draft, link in first comment |
-| `stats` | 19:00 daily | 21:00 | engagement snapshot |
-| `weekly` | 17:00 Sun | 19:00 | strategy brief to Telegram |
-| `token-watch` | 08:00 Mon | 10:00 | warn before the token expires |
+| Workflow | UTC | MSK | Does |
+|----------|-----|-----|------|
+| `harvest` | 04:47 daily | 07:47 | fetch feeds, score new items |
+| `draft` | 05:07 Mon/Wed/Fri | 08:07 | write two variants, send for approval |
+| `approve` | every 20 min, 05–21 | 08–24 | apply your Telegram taps |
+| `publish` | 07:17 Tue/Thu/Sat | 10:17 | post the oldest approved draft |
+| `stats` | 19:00 daily | 22:00 | engagement snapshot |
+| `weekly` | 17:00 Sun | 20:00 | strategy brief to Telegram |
+| `token-watch` | 08:00 Mon | 11:00 | warn before the token expires |
+
+The publishing slot follows the **readers**, not the author: 07:17 UTC is 09:17 in Berlin
+and Paris, i.e. Tuesday-to-Saturday morning for the EU audience. Everything else is timed
+for the author's own day.
+
+Scheduled workflows are disabled by GitHub after 60 days without repository activity. The
+jobs commit state on almost every run, so the repo stays active on its own.
 
 Approval and publishing are deliberately separate: LinkedIn has no scheduled publishing,
 so the slot is ours to choose, and a 20-minute approval lag costs nothing.
