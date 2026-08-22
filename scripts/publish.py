@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 
 import linkedin
 import store
@@ -16,6 +17,31 @@ from llm import load_env
 
 def post_url(urn: str) -> str:
     return f"https://www.linkedin.com/feed/update/{urn}/"
+
+
+def placement() -> str:
+    """`vars.LINK_PLACEMENT` arrives as an empty string when the repo variable is unset,
+    so an explicit falsy check is needed, not a dict default."""
+    return os.environ.get("LINK_PLACEMENT") or "comment"
+
+
+def source_link(draft: store.Draft) -> str:
+    url = draft.meta.get("source_url", "")
+    return url if url.startswith("http") else ""
+
+
+def attach_source(urn: str, url: str) -> None:
+    """LinkedIn suppresses reach on posts with an outbound link in the body, so the
+    source goes into the first comment. If that call fails the link is not lost - it is
+    sent to Telegram to be pasted by hand."""
+    if not url or placement() == "none":
+        return
+    try:
+        linkedin.create_comment(urn, f"Source: {url}")
+        print(f"source posted as a comment: {url}")
+    except RuntimeError as error:
+        print(f"comment failed: {error}")
+        tg.send_message(f"Could not post the source as a comment - paste it yourself:\n{url}\n\n{post_url(urn)}")
 
 
 def main() -> None:
@@ -41,11 +67,18 @@ def main() -> None:
         draft.save()
         return
 
+    url = source_link(draft)
+    body = text
+    if url and placement() == "body":
+        body = f"{text}\n\nSource: {url}"
+
     if args.dry_run:
-        print(json.dumps(linkedin.post_payload(text, args.visibility), indent=2, ensure_ascii=False))
+        print(json.dumps(linkedin.post_payload(body, args.visibility), indent=2, ensure_ascii=False))
+        print(f"\nsource link: {url or '(none)'} | placement: {placement()}")
         return
 
-    urn = linkedin.create_post(text, args.visibility)
+    urn = linkedin.create_post(body, args.visibility)
+    attach_source(urn, url)
     draft.meta["post_urn"] = urn
     draft.meta["published_at"] = store.now()
     draft.status = "published"

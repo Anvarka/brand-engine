@@ -33,6 +33,7 @@ jobs:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
           LINKEDIN_API_VERSION: ${{ vars.LINKEDIN_API_VERSION }}
+          LINK_PLACEMENT: ${{ vars.LINK_PLACEMENT }}
         run: python scripts/publish.py
       - name: Commit state
         run: ./scripts/commit_state.sh "publish: post to LinkedIn"

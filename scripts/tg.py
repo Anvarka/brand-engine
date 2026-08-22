@@ -52,23 +52,35 @@ def get_updates(offset: int) -> list[dict[str, Any]]:
 
 
 def send_draft(draft: Draft) -> int:
-    """Post both variants with the approval keyboard and remember the message id."""
+    """Two messages: the English posts, then the Russian gloss carrying the buttons.
+
+    The gloss is there so the decision can be made by reading Russian; the buttons sit on
+    the second message so they are next to whatever was read last.
+    """
+    source = draft.meta.get("source_url", "")
+    link = f"\n{source}" if source.startswith("http") else ""
+    note = f"\nRewrite note applied: {draft.meta['rewrite_note']}" if draft.meta.get("rewrite_note") else ""
+
     variant_a = draft.body.get("variant_a", "")
     variant_b = draft.body.get("variant_b", "")
-    note = f"\n\nRewrite note applied: {draft.meta['rewrite_note']}" if draft.meta.get("rewrite_note") else ""
-    text = (
-        f"[{draft.meta['pillar']}] {draft.meta['slug']}\n"
-        f"{draft.meta.get('source_url', '')}{note}\n\n"
+    send_message(
+        f"[{draft.meta['pillar']}] {draft.meta['slug']}{link}{note}\n\n"
         f"--- A ({len(variant_a)} chars) ---\n{variant_a}\n\n"
         f"--- B ({len(variant_b)} chars) ---\n{variant_b}"
     )
+
+    russian_a = draft.body.get("ru_a", "")
+    russian_b = draft.body.get("ru_b", "")
     keyboard = [
         [{"text": "✅ A", "callback_data": f"ok:{draft.id}:a"},
          {"text": "✅ B", "callback_data": f"ok:{draft.id}:b"}],
-        [{"text": "✏️ Rewrite", "callback_data": f"rw:{draft.id}"},
-         {"text": "⏭ Skip", "callback_data": f"sk:{draft.id}"}],
+        [{"text": "✏️ Переписать", "callback_data": f"rw:{draft.id}"},
+         {"text": "⏭ Пропустить", "callback_data": f"sk:{draft.id}"}],
     ]
-    message_id = send_message(text, keyboard)
+    gloss = (f"по-русски (не публикуется)\n\n--- A ---\n{russian_a}\n\n--- B ---\n{russian_b}"
+             if russian_a or russian_b else "выбери вариант")
+    message_id = send_message(gloss, keyboard)
+
     draft.meta["tg_message_id"] = str(message_id)
     draft.save()
     return message_id

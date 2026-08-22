@@ -147,6 +147,13 @@ def generate(pillar: str, idea: str, material: str, rewrite_note: str = "") -> t
     return split_variants(raw)
 
 
+def translate(text: str) -> str:
+    """Russian gloss of a finished post. For the approval message only - never published."""
+    if not text.strip():
+        return ""
+    return complete("gloss", {"text": text}, tier="cheap").strip()
+
+
 def review(text: str, material: str) -> Critique:
     voice = (store.ROOT / "content" / "voice.md").read_text()
     return complete("critic", {"voice": voice, "material": material[:8000], "draft": text},
@@ -179,6 +186,7 @@ def handle_rewrite(draft: store.Draft, dry_run: bool) -> None:
     variant_a, variant_b, critiques = generate_reviewed(
         draft.meta["pillar"], draft.meta["idea"], material, note)
     draft.body["variant_a"], draft.body["variant_b"] = variant_a, variant_b
+    draft.body["ru_a"], draft.body["ru_b"] = translate(variant_a), translate(variant_b)
     draft.status = "pending"
     draft.save()
     report(draft, critiques)
@@ -253,6 +261,7 @@ def main() -> None:
     draft.meta["material_ref"] = material_ref
     variant_a, variant_b, critiques = generate_reviewed(pillar, idea, material)
     draft.body["variant_a"], draft.body["variant_b"] = variant_a, variant_b
+    draft.body["ru_a"], draft.body["ru_b"] = translate(variant_a), translate(variant_b)
     draft.save()
     report(draft, critiques)
 

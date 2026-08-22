@@ -19,7 +19,7 @@ STATE_FILE = DATA / "state.json"
 IDEAS_FILE = DATA / "ideas.jsonl"
 STATS_FILE = DATA / "stats.jsonl"
 
-SECTIONS = ("variant_a", "variant_b", "chosen")
+SECTIONS = ("variant_a", "variant_b", "ru_a", "ru_b", "chosen")
 
 DEFAULT_STATE: dict[str, Any] = {
     "tg_offset": 0,

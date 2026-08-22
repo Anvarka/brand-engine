@@ -61,6 +61,18 @@ def create_post(text: str, visibility: str = "PUBLIC") -> str:
     return urn
 
 
+def create_comment(post_urn: str, text: str) -> str:
+    """Comment on your own post. Used to put source links out of the post body, where
+    they cost reach."""
+    encoded = urllib.parse.quote(post_urn, safe="")
+    body, headers = request("POST", f"/rest/socialActions/{encoded}/comments", {
+        "actor": os.environ["LINKEDIN_PERSON_URN"],
+        "object": post_urn,
+        "message": {"text": text},
+    })
+    return body.get("$URN") or headers.get("x-restli-id", "")
+
+
 def social_actions(urn: str) -> dict[str, int]:
     encoded = urllib.parse.quote(urn, safe="")
     body, _ = request("GET", f"/rest/socialActions/{encoded}")

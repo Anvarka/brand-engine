@@ -55,7 +55,8 @@ day 53 so it never expires silently.
 
 **GitHub.** Secrets: `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`,
 `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_URN`. Repository variables (optional):
-`LLM_MODEL_CHEAP`, `LLM_MODEL_DEFAULT`, `LLM_MODEL_SMART`, `LINKEDIN_API_VERSION`.
+`LLM_MODEL_CHEAP`, `LLM_MODEL_DEFAULT`, `LLM_MODEL_SMART`, `LINKEDIN_API_VERSION`,
+`LINK_PLACEMENT`.
 
 ## Schedule
 
@@ -66,13 +67,38 @@ GitHub cron is **UTC**; the times below assume you are on CEST (UTC+2).
 | `harvest` | 04:47 daily | 06:47 | fetch feeds, score new items |
 | `draft` | 05:07 Mon/Wed/Fri | 07:07 | write two variants, send for approval |
 | `approve` | every 20 min, 05–21 | 07–23 | apply your Telegram taps |
-| `publish` | 07:17 Tue/Thu/Sat | 09:17 | post the oldest approved draft |
+| `publish` | 07:17 Tue/Thu/Sat | 09:17 | post the oldest approved draft, link in first comment |
 | `stats` | 19:00 daily | 21:00 | engagement snapshot |
 | `weekly` | 17:00 Sun | 19:00 | strategy brief to Telegram |
 | `token-watch` | 08:00 Mon | 10:00 | warn before the token expires |
 
 Approval and publishing are deliberately separate: LinkedIn has no scheduled publishing,
 so the slot is ours to choose, and a 20-minute approval lag costs nothing.
+
+## The approval message
+
+Two Telegram messages per draft: the English variants first, then a Russian gloss carrying
+the buttons. The gloss exists so the decision can be made by reading Russian — it is
+generated on the cheap model and is never published.
+
+```
+[✅ A]  [✅ B]
+[✏️ Переписать]  [⏭ Пропустить]
+```
+
+*Переписать* asks for a note as a plain reply ("shorter", "lead with the number"); the next
+`draft` run regenerates from it. A draft nobody answers within 48 hours is skipped, and the
+slot goes to the next approved one.
+
+## Source links
+
+`LINK_PLACEMENT` controls where the source URL of a paper or article ends up:
+
+- `comment` (default) — posted as the first comment. LinkedIn suppresses reach on posts
+  with an outbound link in the body. If the comment call fails, the link is sent to
+  Telegram instead of being silently dropped.
+- `body` — appended to the post as `Source: <url>`.
+- `none` — no link at all.
 
 ## Running by hand
 
