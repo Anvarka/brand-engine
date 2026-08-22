@@ -41,12 +41,22 @@ cp .env.example .env          # then fill it in
 .venv/bin/python scripts/course_extract.py      # refresh course_notes.md from the decks
 ```
 
-**LinkedIn access.** Create an app, add the *Share on LinkedIn* product (self-serve) and
-*Sign In with LinkedIn using OpenID Connect*, register `http://localhost:8000/callback` as
-a redirect URL, then:
+**LinkedIn access.** A personal account is not enough — the API needs a developer app,
+and LinkedIn requires every app to be attached to a Company Page you administer.
+
+1. Company Page — <https://www.linkedin.com/company/setup/new>. Any name; it exists only
+   to own the app. Skip if you already administer one.
+2. App — <https://www.linkedin.com/developers/apps/new>. Pick that page, upload any logo.
+3. On the app's **Settings** tab press *Verify* and open the generated link as the page
+   admin. Products stay locked until this is done.
+4. **Products** tab — request *Share on LinkedIn* and *Sign In with LinkedIn using OpenID
+   Connect*. Both are self-serve and usually granted immediately.
+5. **Auth** tab — add the redirect URL `http://localhost:8000/callback`, then copy the
+   Client ID and Client Secret into `.env`.
 
 ```bash
-.venv/bin/python scripts/auth_linkedin.py
+.venv/bin/python scripts/auth_linkedin.py     # browser consent, prints the token and URN
+.venv/bin/python scripts/linkedin.py --check  # confirm the token works
 ```
 
 It prints `LINKEDIN_ACCESS_TOKEN` and `LINKEDIN_PERSON_URN`. Non-partner apps get **no

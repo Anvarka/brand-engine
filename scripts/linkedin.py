@@ -6,6 +6,7 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 from typing import Any
 
 BASE = "https://api.linkedin.com"
@@ -85,3 +86,35 @@ def social_actions(urn: str) -> dict[str, int]:
 def userinfo() -> dict:
     body, _ = request("GET", "/v2/userinfo")
     return body
+
+
+def main() -> None:
+    """`python scripts/linkedin.py --check` - confirm the token works and print the URN."""
+    import argparse
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).parent))
+    from llm import load_env
+
+    load_env()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--check", action="store_true", help="verify the token and show the person URN")
+    args = parser.parse_args()
+    if not args.check:
+        parser.print_help()
+        return
+
+    if not os.environ.get("LINKEDIN_ACCESS_TOKEN"):
+        raise SystemExit("LINKEDIN_ACCESS_TOKEN is not set - run scripts/auth_linkedin.py first")
+
+    info = userinfo()
+    urn = f"urn:li:person:{info['sub']}"
+    configured = os.environ.get("LINKEDIN_PERSON_URN", "")
+    print(f"token works. account: {info.get('name', '?')} <{info.get('email', 'no email scope')}>")
+    print(f"person URN: {urn}")
+    if configured and configured != urn:
+        print(f"WARNING: LINKEDIN_PERSON_URN in the environment is {configured} - update it")
+
+
+if __name__ == "__main__":
+    main()
