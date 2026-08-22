@@ -1,0 +1,85 @@
+{
+  "comment": "Feeds harvested daily. arXiv is pulled through the API query endpoint - the old export.arxiv.org/rss/* feeds return nothing. Dead feeds are logged and skipped, so pruning is safe. `always_keep: true` skips the keyword prefilter for narrow feeds.",
+  "feeds": [
+    {
+      "name": "arxiv cs.IR",
+      "url": "http://export.arxiv.org/api/query?search_query=cat%3Acs.IR&sortBy=submittedDate&sortOrder=descending&max_results=40",
+      "always_keep": true
+    },
+    {
+      "name": "arxiv cs.LG",
+      "url": "http://export.arxiv.org/api/query?search_query=cat%3Acs.LG&sortBy=submittedDate&sortOrder=descending&max_results=40",
+      "always_keep": false
+    },
+    {
+      "name": "Netflix Tech",
+      "url": "https://netflixtechblog.com/feed",
+      "always_keep": false
+    },
+    {
+      "name": "Spotify Research",
+      "url": "https://research.atspotify.com/feed/",
+      "always_keep": true
+    },
+    {
+      "name": "Pinterest Eng",
+      "url": "https://medium.com/feed/pinterest-engineering",
+      "always_keep": false
+    },
+    {
+      "name": "Airbnb Eng",
+      "url": "https://medium.com/feed/airbnb-engineering",
+      "always_keep": false
+    },
+    {
+      "name": "Google Research",
+      "url": "https://blog.google/technology/research/rss/",
+      "always_keep": false
+    },
+    {
+      "name": "Meta Engineering",
+      "url": "https://engineering.fb.com/feed/",
+      "always_keep": false
+    },
+    {
+      "name": "Eugene Yan",
+      "url": "https://eugeneyan.com/rss/",
+      "always_keep": true
+    },
+    {
+      "name": "r/MachineLearning",
+      "url": "https://www.reddit.com/r/MachineLearning/top/.rss?t=week",
+      "always_keep": false
+    }
+  ],
+  "keywords": [
+    "recommend",
+    "recsys",
+    "ranking",
+    "retrieval",
+    "collaborative filtering",
+    "embedding",
+    "two-tower",
+    "two tower",
+    "cold start",
+    "candidate generation",
+    "personaliz",
+    "ctr",
+    "click-through",
+    "user modeling",
+    "sequential model",
+    "matrix factorization",
+    "learning to rank",
+    "search relevance",
+    "ann search",
+    "vector search",
+    "bandit",
+    "counterfactual",
+    "off-policy",
+    "feature store",
+    "serving",
+    "latency",
+    "gnn",
+    "graph neural"
+  ]
+}

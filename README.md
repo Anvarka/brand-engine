@@ -1,0 +1,93 @@
+# brand-engine
+
+A LinkedIn posting pipeline for an ML engineer working on recommender systems.
+It harvests material, drafts posts, reviews them against a rubric, asks for approval in
+Telegram, and publishes the approved one through the LinkedIn API on a fixed slot.
+
+Manual effort per post: one button.
+
+```
+harvest  ──▶ data/ideas.jsonl
+                   │
+draft   ──▶ two variants ──▶ critic pass ──▶ content/queue/*.md ──▶ Telegram + buttons
+                                                                        │
+approve ──▶ status: approved / rewrite_requested / skipped ◀────────────┘
+                   │
+publish ──▶ LinkedIn Posts API ──▶ content/published/ + data/stats.jsonl
+                   │
+stats / weekly ──▶ engagement ──▶ few-shot examples for the next draft
+```
+
+## Layout
+
+| Path | What it is |
+|------|------------|
+| `content/voice.md` | tone, hard rules, stop-list, your writing samples — **the highest-leverage file** |
+| `content/pillars.md` | the seven post formats and the failure mode each one has |
+| `content/war_stories.md` | your raw incident notes; the only source of truth for war-story posts |
+| `content/course_notes.md` | text extracted from the RecSys lecture decks |
+| `content/queue/` | drafts awaiting a decision |
+| `content/published/` | archive with the post URN |
+| `prompts/` | prompt templates, split into a cacheable prefix and the variable part |
+| `data/sources.json` | feeds and the keyword prefilter |
+| `data/state.json` | Telegram offset, pillar cursor, token issue date |
+
+## Setup
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env          # then fill it in
+.venv/bin/python scripts/llm.py --list-models   # confirm the model ids for your key
+.venv/bin/python scripts/course_extract.py      # refresh course_notes.md from the decks
+```
+
+**LinkedIn access.** Create an app, add the *Share on LinkedIn* product (self-serve) and
+*Sign In with LinkedIn using OpenID Connect*, register `http://localhost:8000/callback` as
+a redirect URL, then:
+
+```bash
+.venv/bin/python scripts/auth_linkedin.py
+```
+
+It prints `LINKEDIN_ACCESS_TOKEN` and `LINKEDIN_PERSON_URN`. Non-partner apps get **no
+refresh token** — the token dies after 60 days, and `token_watch.py` pings Telegram on
+day 53 so it never expires silently.
+
+**GitHub.** Secrets: `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`,
+`LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_URN`. Repository variables (optional):
+`LLM_MODEL_CHEAP`, `LLM_MODEL_DEFAULT`, `LLM_MODEL_SMART`, `LINKEDIN_API_VERSION`.
+
+## Schedule
+
+GitHub cron is **UTC**; the times below assume you are on CEST (UTC+2).
+
+| Workflow | UTC | Local | Does |
+|----------|-----|-------|------|
+| `harvest` | 04:47 daily | 06:47 | fetch feeds, score new items |
+| `draft` | 05:07 Mon/Wed/Fri | 07:07 | write two variants, send for approval |
+| `approve` | every 20 min, 05–21 | 07–23 | apply your Telegram taps |
+| `publish` | 07:17 Tue/Thu/Sat | 09:17 | post the oldest approved draft |
+| `stats` | 19:00 daily | 21:00 | engagement snapshot |
+| `weekly` | 17:00 Sun | 19:00 | strategy brief to Telegram |
+| `token-watch` | 08:00 Mon | 10:00 | warn before the token expires |
+
+Approval and publishing are deliberately separate: LinkedIn has no scheduled publishing,
+so the slot is ours to choose, and a 20-minute approval lag costs nothing.
+
+## Running by hand
+
+```bash
+.venv/bin/python scripts/harvest.py --dry-run    # feeds only, no LLM calls
+.venv/bin/python scripts/draft.py --dry-run      # write a draft, skip Telegram
+.venv/bin/python scripts/draft.py --pillar hot_take
+.venv/bin/python scripts/publish.py --dry-run    # print the API payload
+.venv/bin/python scripts/stats.py --weekly
+```
+
+## Before the first real post
+
+1. Fill the **Voice samples** section of `content/voice.md`. Until then drafts read
+   correct but anonymous.
+2. Add 3–5 entries to `content/war_stories.md`. The war-story pillar invents nothing, so
+   with an empty file it simply falls back to other pillars.
+3. Run `scripts/profile_kit.py` and update the profile itself — posts drive traffic to it.

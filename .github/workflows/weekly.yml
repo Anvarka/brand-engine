@@ -1,0 +1,38 @@
+name: weekly
+
+on:
+  schedule:
+    - cron: "0 17 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: brand-engine-state
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: weekly
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_MODEL_CHEAP: ${{ vars.LLM_MODEL_CHEAP }}
+          LLM_MODEL_DEFAULT: ${{ vars.LLM_MODEL_DEFAULT }}
+          LLM_MODEL_SMART: ${{ vars.LLM_MODEL_SMART }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
+          LINKEDIN_API_VERSION: ${{ vars.LINKEDIN_API_VERSION }}
+        run: python scripts/stats.py --weekly
+      - name: Commit state
+        run: ./scripts/commit_state.sh "weekly: strategy brief"
