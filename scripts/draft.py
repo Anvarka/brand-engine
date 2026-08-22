@@ -61,6 +61,28 @@ def local_topic(pillar: str, state: dict) -> tuple[str, str] | None:
     return None
 
 
+def best_local_section(pillar: str, query: str) -> str:
+    """Attach the local material a feed idea refers to.
+
+    A seeded idea like "Cold start (Lecture 4)" carries a two-line summary; the lecture
+    itself is what makes the post specific. Matching on word overlap is enough here -
+    there are nine sections, not nine thousand.
+    """
+    if pillar not in LOCAL_MATERIAL:
+        return ""
+    path = store.ROOT / "content" / LOCAL_MATERIAL[pillar]
+    if not path.exists():
+        return ""
+    wanted = set(re.findall(r"[a-z]{4,}", query.lower()))
+    best, best_score = "", 0
+    for section in re.split(r"^## ", path.read_text(), flags=re.M)[1:]:
+        title = section.splitlines()[0].strip()
+        score = len(wanted & set(re.findall(r"[a-z]{4,}", title.lower())))
+        if score > best_score:
+            best, best_score = section.strip(), score
+    return best[:8000] if best_score else ""
+
+
 def feed_idea(pillar: str) -> tuple[dict, list[dict]] | None:
     ideas = store.read_jsonl(store.IDEAS_FILE)
     candidates = [i for i in ideas if not i.get("used") and i.get("pillar") == pillar]
@@ -217,6 +239,9 @@ def main() -> None:
         idea = f"{idea_record['angle']}\n\nWhy now: {idea_record.get('why_now', '')}"
         material = (f"Source: {idea_record['source']} - {idea_record['title']}\n"
                     f"{idea_record['url']}\n\n{idea_record['summary']}")
+        local = best_local_section(pillar, f"{idea_record['title']} {idea_record['summary']}")
+        if local:
+            material += f"\n\n# Related material from your own course\n\n{local}"
         material_ref = idea_record["url"]
         slug = slugify(idea_record["title"])
         for record in all_ideas:
