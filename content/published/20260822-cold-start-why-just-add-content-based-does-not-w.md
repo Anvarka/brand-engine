@@ -2,15 +2,15 @@
 id: 20260822-469e88c3
 slug: cold-start-why-just-add-content-based-does-not-w
 pillar: recsys_101
-status: approved
+status: published
 created: 2026-08-22T21:12:06+00:00
 idea: Content-based features solve item cold start only where the catalog metadata is as discriminative as behaviour - which is almost never.  Why now:
 source_url: local://seed/3e8563e330d9
 variant: a
 tg_message_id: 67
 rewrite_note: Drop the reference to 'Lecture 4' entirely - the reader cannot resolve it. Explain the idea on its own authority.
-post_urn: 
-published_at: 
+post_urn: urn:li:share:7497061869258502144
+published_at: 2026-08-22T22:47:18+00:00
 material_ref: local://seed/3e8563e330d9
 approved_at: 2026-08-22T22:15:39+00:00
 ---

@@ -23,9 +23,10 @@ def placement() -> str:
     """`vars.LINK_PLACEMENT` arrives as an empty string when the repo variable is unset,
     so an explicit falsy check is needed, not a dict default.
 
-    Default is `body`: posting the link as the first comment needs partner-level access
-    that the self-serve product does not grant (verified 403 ACCESS_DENIED)."""
-    return os.environ.get("LINK_PLACEMENT") or "body"
+    Default is `telegram`: an outbound link in the body costs reach, and posting it as
+    the first comment needs partner access the self-serve product does not grant
+    (verified 403 ACCESS_DENIED). So the link is sent to Telegram to be pasted by hand."""
+    return os.environ.get("LINK_PLACEMENT") or "telegram"
 
 
 def source_link(draft: store.Draft) -> str:
@@ -34,11 +35,19 @@ def source_link(draft: store.Draft) -> str:
 
 
 def attach_source(urn: str, url: str) -> None:
-    """LinkedIn suppresses reach on posts with an outbound link in the body, so the
-    source goes into the first comment. If that call fails the link is not lost - it is
-    sent to Telegram to be pasted by hand."""
-    if not url or placement() == "none":
+    """Get the source link to the reader without paying the body-link reach penalty.
+
+    `telegram` (default) hands it over for manual pasting as the first comment;
+    `comment` tries the API first and falls back to the same message."""
+    mode = placement()
+    if not url or mode in ("none", "body"):
         return
+
+    if mode == "telegram":
+        tg.send_message(f"Первым комментарием:\n{url}")
+        print(f"source link sent to Telegram: {url}")
+        return
+
     try:
         linkedin.create_comment(urn, f"Source: {url}")
         print(f"source posted as a comment: {url}")
