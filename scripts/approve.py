@@ -31,7 +31,9 @@ def handle_callback(query: dict, state: dict) -> None:
         draft.body["chosen"] = draft.body.get(f"variant_{draft.meta['variant']}", "")
         draft.meta["approved_at"] = store.now()
         draft.save()
-        tg.answer_callback(query["id"], f"variant {variant.upper()} queued for publishing")
+        tg.answer_callback(query["id"], f"variant {variant.upper()} queued")
+        tg.send_message(f"✅ Вариант {(variant or 'a').upper()} принят: {draft.meta['slug']}\n"
+                        f"Опубликуется в ближайший слот (вт/чт/сб 09:17).")
         print(f"approved {draft_id} variant {variant}")
 
     elif action == "rw":
@@ -45,6 +47,7 @@ def handle_callback(query: dict, state: dict) -> None:
         draft.status = "skipped"
         draft.save()
         tg.answer_callback(query["id"], "skipped")
+        tg.send_message(f"⏭ Пропущено: {draft.meta['slug']}")
         print(f"skipped {draft_id}")
 
 
@@ -91,15 +94,20 @@ def main() -> None:
     updates = tg.get_updates(state.get("tg_offset", 0))
     print(f"{len(updates)} update(s)")
 
-    for update in updates:
-        state["tg_offset"] = update["update_id"] + 1
-        if "callback_query" in update:
-            handle_callback(update["callback_query"], state)
-        elif "message" in update:
-            handle_message(update["message"], state)
-
-    expire_stale()
-    store.write_state(state)
+    try:
+        for update in updates:
+            # Advance the offset first: a malformed update must not be retried forever.
+            state["tg_offset"] = update["update_id"] + 1
+            try:
+                if "callback_query" in update:
+                    handle_callback(update["callback_query"], state)
+                elif "message" in update:
+                    handle_message(update["message"], state)
+            except Exception as error:  # one bad update must not block the queue
+                print(f"  update {update['update_id']} failed: {error}")
+        expire_stale()
+    finally:
+        store.write_state(state)
 
 
 if __name__ == "__main__":

@@ -43,7 +43,13 @@ def send_message(text: str, keyboard: list[list[dict[str, str]]] | None = None) 
 
 
 def answer_callback(callback_id: str, text: str) -> None:
-    _call("answerCallbackQuery", {"callback_query_id": callback_id, "text": text})
+    """Best effort only. Telegram invalidates a callback id after about a minute and we
+    poll every 20, so the toast is normally already impossible - the confirmation the
+    user actually sees is a plain message."""
+    try:
+        _call("answerCallbackQuery", {"callback_query_id": callback_id, "text": text})
+    except RuntimeError as error:
+        print(f"  (toast not delivered: {error})")
 
 
 def get_updates(offset: int) -> list[dict[str, Any]]:
