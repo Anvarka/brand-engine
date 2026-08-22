@@ -104,11 +104,28 @@ slot goes to the next approved one.
 
 `LINK_PLACEMENT` controls where the source URL of a paper or article ends up:
 
-- `comment` (default) — posted as the first comment. LinkedIn suppresses reach on posts
-  with an outbound link in the body. If the comment call fails, the link is sent to
-  Telegram instead of being silently dropped.
-- `body` — appended to the post as `Source: <url>`.
+- `body` (default) — appended to the post as `Source: <url>`.
+- `comment` — posts it as the first comment, which is where an outbound link costs the
+  least reach. **Requires partner access this app does not have** (verified: 403
+  `ACCESS_DENIED` on `socialActions.CREATE`), so it falls back to sending the link to
+  Telegram for manual pasting.
 - `none` — no link at all.
+
+## What the self-serve tier cannot do
+
+`Share on LinkedIn` grants publishing and nothing else. Verified against the live API on
+2026-08-23:
+
+| Works | Denied (partner-only) |
+|-------|----------------------|
+| `POST /rest/posts` — publish | `POST /rest/socialActions/{urn}/comments` — comment |
+| `DELETE /rest/posts/{urn}` — delete | `GET /rest/socialActions/{urn}` — likes and comment counts |
+| `GET /v2/userinfo` — identity | |
+
+The consequence: **engagement cannot be collected automatically.** `stats.py` detects the
+403 and stops instead of failing daily; `weekly` skips the brief while no numbers exist.
+Until numbers are entered by hand into `data/stats.jsonl`, the pillar rotation stays
+round-robin and drafts get no few-shot examples of what performed.
 
 ## Running by hand
 

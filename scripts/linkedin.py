@@ -12,6 +12,12 @@ from typing import Any
 BASE = "https://api.linkedin.com"
 
 
+class AccessDenied(RuntimeError):
+    """The endpoint needs Marketing Developer Platform partner access, which the
+    self-serve `Share on LinkedIn` product does not grant."""
+
+
+
 def _headers() -> dict[str, str]:
     return {
         "Authorization": f"Bearer {os.environ['LINKEDIN_ACCESS_TOKEN']}",
@@ -36,7 +42,11 @@ def request(method: str, path: str, body: dict | None = None) -> tuple[dict, dic
             headers = {k.lower(): v for k, v in response.headers.items()}
             return (json.loads(raw) if raw.strip() else {}), headers
     except urllib.error.HTTPError as error:
-        raise RuntimeError(f"linkedin {method} {path} -> {error.code}: {error.read().decode()}") from error
+        detail = error.read().decode()
+        message = f"linkedin {method} {path} -> {error.code}: {detail}"
+        if error.code == 403 and "ACCESS_DENIED" in detail:
+            raise AccessDenied(message) from error
+        raise RuntimeError(message) from error
 
 
 def post_payload(text: str, visibility: str = "PUBLIC") -> dict[str, Any]:
@@ -60,6 +70,12 @@ def create_post(text: str, visibility: str = "PUBLIC") -> str:
     if not urn:
         raise RuntimeError("post created but no x-restli-id header returned")
     return urn
+
+
+def delete_post(post_urn: str) -> None:
+    """Remove a post. Used to clean up the smoke-test post."""
+    encoded = urllib.parse.quote(post_urn, safe="")
+    request("DELETE", f"/rest/posts/{encoded}")
 
 
 def create_comment(post_urn: str, text: str) -> str:

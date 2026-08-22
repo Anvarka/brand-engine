@@ -21,8 +21,11 @@ def post_url(urn: str) -> str:
 
 def placement() -> str:
     """`vars.LINK_PLACEMENT` arrives as an empty string when the repo variable is unset,
-    so an explicit falsy check is needed, not a dict default."""
-    return os.environ.get("LINK_PLACEMENT") or "comment"
+    so an explicit falsy check is needed, not a dict default.
+
+    Default is `body`: posting the link as the first comment needs partner-level access
+    that the self-serve product does not grant (verified 403 ACCESS_DENIED)."""
+    return os.environ.get("LINK_PLACEMENT") or "body"
 
 
 def source_link(draft: store.Draft) -> str:
@@ -39,6 +42,9 @@ def attach_source(urn: str, url: str) -> None:
     try:
         linkedin.create_comment(urn, f"Source: {url}")
         print(f"source posted as a comment: {url}")
+    except linkedin.AccessDenied:
+        print("commenting needs partner access - sending the link to Telegram instead")
+        tg.send_message(f"Paste the source as the first comment:\n{url}\n\n{post_url(urn)}")
     except RuntimeError as error:
         print(f"comment failed: {error}")
         tg.send_message(f"Could not post the source as a comment - paste it yourself:\n{url}\n\n{post_url(urn)}")

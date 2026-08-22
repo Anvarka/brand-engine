@@ -31,6 +31,11 @@ def collect() -> None:
             continue
         try:
             counts = linkedin.social_actions(urn)
+        except linkedin.AccessDenied:
+            print("engagement counts need Marketing Developer Platform partner access, "
+                  "which this app does not have - skipping collection.\n"
+                  "Numbers can still be entered by hand into data/stats.jsonl.")
+            return
         except RuntimeError as error:
             print(f"  {urn}: {error}")
             continue
@@ -50,6 +55,10 @@ def weekly() -> None:
     latest: dict[str, dict] = {}
     for record in records:
         latest[record["urn"]] = record
+
+    if not any(r.get("engagement", 0) for r in latest.values()):
+        print("no engagement data recorded yet - skipping the brief")
+        return
 
     rows = sorted(latest.values(), key=lambda r: r.get("engagement", 0), reverse=True)
     summary = "\n\n".join(
