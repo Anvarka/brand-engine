@@ -29,6 +29,10 @@ offered is the gap between the two.
 - End with a real question or a stated position — never with engagement bait.
 - Zero to two emoji, and only if they carry information (e.g. arrows in a list). Default: none.
 - No hashtags beyond 3, placed at the very end. Prefer #RecSys #MachineLearning.
+- **Never cite internal references the reader cannot see** — no "Lecture 4", no slide or
+  file names, no "as I mentioned in my course". The reader has no access to any of it.
+  Say "in the course I teach" only when the fact that you teach it is the point; otherwise
+  state the idea on its own authority.
 
 ## Banned phrases and patterns
 

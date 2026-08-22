@@ -26,6 +26,8 @@ Hard constraints, checked afterwards by a separate reviewer:
 - no phrase from the stop-list
 - every specific fact traceable to the material given below; no invented numbers,
   employers, benchmarks or anecdotes
+- the source material is private: never name a lecture number, slide, file or internal
+  project the reader cannot look up
 
 Output format — exactly this, nothing else:
 

@@ -19,7 +19,9 @@ Rubric fields, each 0-5:
 - voice_fit: sounds like the author, not like a content marketer
 
 Also return:
-- banned_hits: every stop-list phrase or pattern found, verbatim
+- banned_hits: every stop-list phrase or pattern found, verbatim. This includes any
+  reference the reader cannot resolve - lecture numbers, slide numbers, file names,
+  internal project names - quoted verbatim so it can be removed.
 - char_count: character count of the draft
 - verdict: "pass" only if every score >= 3, banned_hits is empty, and char_count is
   between 900 and 1300. Otherwise "revise".
