@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import calendar
 import json
 import re
 from typing import Literal
@@ -56,12 +57,14 @@ def fetch_feeds(verbose: bool = True) -> list[dict]:
             haystack = f"{title} {summary}".lower()
             if not feed["always_keep"] and not any(k in haystack for k in keywords):
                 continue
+            stamp = entry.get("published_parsed") or entry.get("updated_parsed")
             collected.append({
                 "url": entry.get("link", ""),
                 "title": title,
                 "summary": summary,
                 "source": feed["name"],
                 "published": entry.get("published", ""),
+                "published_ts": calendar.timegm(stamp) if stamp else 0,
             })
             kept += 1
         if verbose:

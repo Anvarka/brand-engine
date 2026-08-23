@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import re
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
 
@@ -23,6 +24,8 @@ LOCAL_MATERIAL = {
     "build_log": "build_log.md",
 }
 TOP_N_FEWSHOT = 3
+HALF_LIFE_DAYS = 7      # an idea is worth half as much a week after it appeared
+SUPERSEDE_HOURS = 20    # an unanswered draft must not block the next slot
 
 
 class Critique(BaseModel):
@@ -83,6 +86,25 @@ def best_local_section(pillar: str, query: str) -> str:
     return best[:8000] if best_score else ""
 
 
+def freshness_score(idea: dict) -> float:
+    """Relevance decayed by age, so today's good paper beats last month's better one.
+
+    Age comes from the feed's own publication timestamp where the feed provides one, and
+    from our discovery time otherwise.
+    """
+    stamp = idea.get("published_ts") or 0
+    if stamp:
+        age_days = (datetime.now(timezone.utc).timestamp() - stamp) / 86400
+    else:
+        try:
+            seen = datetime.fromisoformat(idea.get("scored_at", ""))
+            age_days = (datetime.now(timezone.utc) - seen).total_seconds() / 86400
+        except ValueError:
+            age_days = 0.0
+    age_days = max(age_days, 0.0)
+    return idea.get("relevance", 0) * 0.5 ** (age_days / HALF_LIFE_DAYS)
+
+
 def feed_idea(pillar: str) -> tuple[dict, list[dict]] | None:
     ideas = store.read_jsonl(store.IDEAS_FILE)
     candidates = [i for i in ideas if not i.get("used") and i.get("pillar") == pillar]
@@ -90,7 +112,7 @@ def feed_idea(pillar: str) -> tuple[dict, list[dict]] | None:
         candidates = [i for i in ideas if not i.get("used")]
     if not candidates:
         return None
-    best = max(candidates, key=lambda i: i.get("relevance", 0))
+    best = max(candidates, key=freshness_score)
     return best, ideas
 
 
@@ -217,6 +239,22 @@ def main() -> None:
     if pending_rewrite:
         handle_rewrite(pending_rewrite[0], args.dry_run)
         return
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=SUPERSEDE_HOURS)
+    for stale in store.iter_drafts():
+        if stale.status != "pending":
+            continue
+        try:
+            created = datetime.fromisoformat(stale.meta.get("created", ""))
+        except ValueError:
+            continue
+        if created < cutoff:
+            # Unanswered by the time the next slot comes round: drop it rather than let
+            # it block generation, otherwise one missed tap costs a whole publishing slot.
+            stale.status = "superseded"
+            stale.meta["skip_reason"] = f"unanswered after {SUPERSEDE_HOURS}h"
+            stale.save()
+            print(f"superseded {stale.id}")
 
     if any(d.status == "pending" for d in store.iter_drafts()):
         print("a draft is already awaiting approval - not generating another")
