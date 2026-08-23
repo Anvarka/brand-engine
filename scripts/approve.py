@@ -68,6 +68,24 @@ def handle_message(message: dict, state: dict) -> None:
     print(f"rewrite note stored for {draft_id}: {text[:60]}")
 
 
+def run_rewrites() -> None:
+    """Regenerate anything the user asked to rewrite, right here.
+
+    Waiting for the next scheduled draft run would cost up to two days and eat that
+    slot - a "make it shorter" note must not push the whole week back.
+    """
+    pending = [d for d in store.iter_drafts() if d.status == "rewrite_requested"]
+    if not pending:
+        return
+    import draft  # imported lazily: only a rewrite needs the model client
+    for item in pending:
+        try:
+            draft.handle_rewrite(item, dry_run=False)
+        except Exception as error:
+            print(f"  rewrite of {item.id} failed: {error}")
+            tg.send_message(f"Не смог переписать {item.meta['slug']}: {error}")
+
+
 def expire_stale() -> None:
     cutoff = datetime.now(timezone.utc) - timedelta(hours=EXPIRE_HOURS)
     for draft in store.iter_drafts():
@@ -105,6 +123,7 @@ def main() -> None:
                     handle_message(update["message"], state)
             except Exception as error:  # one bad update must not block the queue
                 print(f"  update {update['update_id']} failed: {error}")
+        run_rewrites()
         expire_stale()
     finally:
         store.write_state(state)
