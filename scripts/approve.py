@@ -64,7 +64,7 @@ def handle_message(message: dict, state: dict) -> None:
     draft.status = "rewrite_requested"
     draft.save()
     state["awaiting_rewrite"] = ""
-    tg.send_message("Noted - regenerating on the next draft run.")
+    tg.send_message("Принято, переписываю — новый вариант придёт через пару минут.")
     print(f"rewrite note stored for {draft_id}: {text[:60]}")
 
 

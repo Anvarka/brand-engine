@@ -201,9 +201,38 @@ def generate_reviewed(pillar: str, idea: str, material: str, note: str = "") -> 
 
 # --------------------------------------------------------------------------- entry
 
+def resolve_material(draft: store.Draft) -> str:
+    """Rebuild the source text a draft was written from.
+
+    The draft file stores only a reference - a lecture section or a URL - so a rewrite
+    has to load the content back. Passing the bare reference would leave the model with
+    nothing to be faithful to, and the critic with nothing to check.
+    """
+    ref = draft.meta.get("material_ref", "")
+
+    if " :: " in ref:
+        filename, _, title = ref.partition(" :: ")
+        path = store.ROOT / "content" / filename
+        if path.exists():
+            for section in re.split(r"^## ", path.read_text(), flags=re.M)[1:]:
+                if section.splitlines()[0].strip() == title.strip():
+                    return section.strip()[:8000]
+
+    if ref.startswith("http"):
+        for idea in store.read_jsonl(store.IDEAS_FILE):
+            if idea.get("url") == ref:
+                material = (f"Source: {idea['source']} - {idea['title']}\n{idea['url']}\n\n"
+                            f"{idea['summary']}")
+                local = best_local_section(draft.meta.get("pillar", ""),
+                                           f"{idea['title']} {idea['summary']}")
+                return material + (f"\n\n# Related material from your own course\n\n{local}" if local else "")
+
+    return draft.meta.get("idea", "")
+
+
 def handle_rewrite(draft: store.Draft, dry_run: bool) -> None:
     note = draft.meta.get("rewrite_note", "")
-    material = draft.meta.get("material_ref", "") or draft.meta.get("idea", "")
+    material = resolve_material(draft)
     print(f"regenerating {draft.id} with note: {note!r}")
     variant_a, variant_b, critiques = generate_reviewed(
         draft.meta["pillar"], draft.meta["idea"], material, note)
