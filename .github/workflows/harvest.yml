@@ -21,7 +21,8 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -r requirements.txt
+      - run: |
+          pip install -r requirements.txt
       - name: harvest
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -33,6 +34,8 @@ jobs:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
           LINKEDIN_API_VERSION: ${{ vars.LINKEDIN_API_VERSION }}
-        run: python scripts/harvest.py
+        run: |
+          python scripts/harvest.py
       - name: Commit state
-        run: ./scripts/commit_state.sh "harvest: new ideas"
+        run: |
+          ./scripts/commit_state.sh "harvest: new ideas"
