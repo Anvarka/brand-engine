@@ -77,14 +77,18 @@ GitHub cron is **UTC**. Author is on MSK (UTC+3); the audience is EU/US.
 | `harvest` | 04:47 daily | 07:47 | fetch feeds, score new items |
 | `draft` | 05:07 Mon/Wed/Fri | 08:07 | write two variants, send for approval |
 | `approve` | every 20 min, 05–21 | 08–24 | apply your Telegram taps |
-| `publish` | 07:17 Tue/Thu/Sat | 10:17 | post the oldest approved draft |
+| `publish` | 16:07 Tue/Thu/Sat | 19:07 | post the oldest approved draft |
 | `stats` | 19:00 daily | 22:00 | engagement snapshot |
 | `weekly` | 17:00 Sun | 20:00 | strategy brief to Telegram |
 | `token-watch` | 08:00 Mon | 11:00 | warn before the token expires |
 
-The publishing slot follows the **readers**, not the author: 07:17 UTC is 09:17 in Berlin
-and Paris, i.e. Tuesday-to-Saturday morning for the EU audience. Everything else is timed
-for the author's own day.
+The publishing slot follows the **readers**: 16:07 UTC is 12:07 in New York — the US
+lunch peak — and 18:07 in Berlin. It also leaves the author a full working day to approve,
+since the draft arrives 35 hours earlier.
+
+A draft may wait `DRAFT_TTL_HOURS` (44) before it is dropped. That number is not arbitrary:
+it must exceed the 35 hours between a draft and its slot, and fall short of the 48 hours
+between two draft runs — so a missed tap costs exactly one post, never the following one.
 
 Scheduled workflows are disabled by GitHub after 60 days without repository activity. The
 jobs commit state on almost every run, so the repo stays active on its own.

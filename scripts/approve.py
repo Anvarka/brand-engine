@@ -12,7 +12,7 @@ import store
 import tg
 from llm import load_env
 
-EXPIRE_HOURS = 48
+EXPIRE_HOURS = store.DRAFT_TTL_HOURS
 
 
 def handle_callback(query: dict, state: dict) -> None:

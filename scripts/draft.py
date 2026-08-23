@@ -25,7 +25,7 @@ LOCAL_MATERIAL = {
 }
 TOP_N_FEWSHOT = 3
 HALF_LIFE_DAYS = 7      # an idea is worth half as much a week after it appeared
-SUPERSEDE_HOURS = 20    # an unanswered draft must not block the next slot
+SUPERSEDE_HOURS = store.DRAFT_TTL_HOURS  # never let a stale draft block the next slot
 
 
 class Critique(BaseModel):

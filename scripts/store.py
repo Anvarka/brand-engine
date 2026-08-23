@@ -21,6 +21,11 @@ STATS_FILE = DATA / "stats.jsonl"
 
 SECTIONS = ("variant_a", "variant_b", "ru_a", "ru_b", "chosen")
 
+# How long a draft may sit unanswered. Must be longer than the gap between a draft and
+# the slot it feeds (35h), and shorter than the gap between two draft runs (48h) - so a
+# missed tap is dropped exactly once the next draft is due, never before its own slot.
+DRAFT_TTL_HOURS = 44
+
 DEFAULT_STATE: dict[str, Any] = {
     "tg_offset": 0,
     "pillar_cursor": 0,
