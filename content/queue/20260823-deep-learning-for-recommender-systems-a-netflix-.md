@@ -2,7 +2,7 @@
 id: 20260823-4dae1aed
 slug: deep-learning-for-recommender-systems-a-netflix-
 pillar: recsys_101
-status: pending
+status: skipped
 created: 2026-08-23T11:55:45+00:00
 idea: Explain one non-obvious point from: Deep learning for recommender systems_ A Netflix case study
 source_url: course_notes.md :: Deep learning for recommender systems_ A Netflix case study
@@ -12,6 +12,7 @@ rewrite_note:
 post_urn: 
 published_at: 
 material_ref: course_notes.md :: Deep learning for recommender systems_ A Netflix case study
+skip_reason: no answer within 44h
 ---
 
 <!-- variant_a -->
