@@ -29,10 +29,19 @@ def main() -> None:
         return
 
     expires = issued + timedelta(days=LIFETIME_DAYS)
+    try:
+        import reauth
+        link = reauth.authorize_url()
+        how = (f"1. Открой ссылку и разреши доступ:\n{link}\n\n"
+               f"2. Скопируй код со страницы\n"
+               f"3. Запусти воркфлоу reauth с этим кодом:\n"
+               f"https://github.com/Anvarka/brand-engine/actions/workflows/reauth.yml")
+    except Exception:
+        how = "cd ~/proj/brand-engine && python scripts/auth_linkedin.py"
+
     tg.send_message(
-        f"LinkedIn token expires {expires.date().isoformat()} ({LIFETIME_DAYS - age} days left).\n\n"
-        f"cd ~/proj/brand-engine && python scripts/auth_linkedin.py\n"
-        f"then update the LINKEDIN_ACCESS_TOKEN secret in the repo settings."
+        f"⏳ Токен LinkedIn истекает {expires.date().isoformat()} "
+        f"(осталось {LIFETIME_DAYS - age} дн.).\n\n{how}"
     )
 
 

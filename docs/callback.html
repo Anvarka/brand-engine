@@ -1,0 +1,42 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>brand-engine · authorization code</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+         background: #1c1b22; color: #f7f7fa;
+         font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  main { width: min(560px, 90vw); padding: 32px 0; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  p { color: #8b8a95; margin: 0 0 24px; }
+  code { display: block; padding: 18px; border-radius: 12px; background: #26252e;
+         border: 1px solid #3a3945; word-break: break-all; font-size: 15px;
+         font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  button { margin-top: 16px; width: 100%; padding: 14px; font-size: 16px; font-weight: 600;
+           border: 0; border-radius: 12px; background: #5b8dd9; color: #0f0e14; cursor: pointer; }
+  button:active { transform: translateY(1px); }
+  .err { color: #ff8a80; }
+</style>
+<main>
+  <h1>Authorization code</h1>
+  <p>Copy this into the <em>reauth</em> workflow. Nothing here is stored or sent anywhere.</p>
+  <code id="code">—</code>
+  <button id="copy">Copy</button>
+</main>
+<script>
+  const code = new URLSearchParams(location.search).get("code");
+  const error = new URLSearchParams(location.search).get("error_description");
+  const box = document.getElementById("code");
+  if (code) {
+    box.textContent = code;
+  } else {
+    box.textContent = error || "No code in the URL. Start the authorization again.";
+    box.classList.add("err");
+    document.getElementById("copy").disabled = true;
+  }
+  document.getElementById("copy").onclick = async () => {
+    await navigator.clipboard.writeText(code);
+    document.getElementById("copy").textContent = "Copied";
+  };
+</script>

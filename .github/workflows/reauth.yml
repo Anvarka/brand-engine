@@ -1,0 +1,46 @@
+name: reauth
+
+# Refresh the LinkedIn token without a laptop:
+#  1. token-watch sends the consent link to Telegram on day 53
+#  2. approve it on the phone; the redirect lands on the GitHub Pages callback page
+#  3. copy the code shown there and run this workflow with it
+on:
+  workflow_dispatch:
+    inputs:
+      code:
+        description: "Authorization code from the callback page"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: brand-engine-state
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: |
+          pip install -r requirements.txt
+      - name: reauth
+        env:
+          LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          LINKEDIN_CODE: ${{ inputs.code }}
+          LINKEDIN_API_VERSION: ${{ vars.LINKEDIN_API_VERSION }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          python scripts/reauth.py
+      - name: Commit state
+        run: |
+          ./scripts/commit_state.sh "reauth: token refreshed"
