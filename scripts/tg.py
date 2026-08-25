@@ -6,6 +6,7 @@ import json
 import os
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Any
 
 from llm import load_env
@@ -40,6 +41,42 @@ def send_message(text: str, keyboard: list[list[dict[str, str]]] | None = None) 
             payload["reply_markup"] = {"inline_keyboard": keyboard}
         message_id = _call("sendMessage", payload)["result"]["message_id"]
     return message_id
+
+
+def send_photo(path: str | Path, caption: str = "",
+               keyboard: list[list[dict[str, str]]] | None = None) -> int:
+    """Upload a local image. Multipart is hand-rolled to keep the stdlib-only rule."""
+    import mimetypes
+    import uuid
+
+    path = Path(path)
+    chat_id = os.environ["TELEGRAM_CHAT_ID"]
+    boundary = uuid.uuid4().hex
+    fields: dict[str, str] = {"chat_id": chat_id, "caption": caption[:1024]}
+    if keyboard:
+        fields["reply_markup"] = json.dumps({"inline_keyboard": keyboard})
+
+    body = bytearray()
+    for name, value in fields.items():
+        body += (f"--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n"
+                 f"{value}\r\n").encode()
+    mime = mimetypes.guess_type(path.name)[0] or "image/png"
+    body += (f"--{boundary}\r\nContent-Disposition: form-data; name=\"photo\"; "
+             f"filename=\"{path.name}\"\r\nContent-Type: {mime}\r\n\r\n").encode()
+    body += path.read_bytes()
+    body += f"\r\n--{boundary}--\r\n".encode()
+
+    token = os.environ["TELEGRAM_BOT_TOKEN"]
+    request = urllib.request.Request(
+        API.format(token=token, method="sendPhoto"),
+        data=bytes(body),
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            return json.loads(response.read().decode())["result"]["message_id"]
+    except urllib.error.HTTPError as error:
+        raise RuntimeError(f"telegram sendPhoto failed: {error.read().decode()}") from error
 
 
 def answer_callback(callback_id: str, text: str) -> None:

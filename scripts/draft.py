@@ -269,25 +269,18 @@ def main() -> None:
         handle_rewrite(pending_rewrite[0], args.dry_run)
         return
 
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=SUPERSEDE_HOURS)
+    # A slot must always produce a draft. An unanswered one is replaced, not allowed to
+    # block generation - one missed tap used to stall the whole pipeline silently.
     for stale in store.iter_drafts():
         if stale.status != "pending":
             continue
-        try:
-            created = datetime.fromisoformat(stale.meta.get("created", ""))
-        except ValueError:
-            continue
-        if created < cutoff:
-            # Unanswered by the time the next slot comes round: drop it rather than let
-            # it block generation, otherwise one missed tap costs a whole publishing slot.
-            stale.status = "superseded"
-            stale.meta["skip_reason"] = f"unanswered after {SUPERSEDE_HOURS}h"
-            stale.save()
-            print(f"superseded {stale.id}")
-
-    if any(d.status == "pending" for d in store.iter_drafts()):
-        print("a draft is already awaiting approval - not generating another")
-        return
+        stale.status = "superseded"
+        stale.meta["skip_reason"] = "replaced by a newer draft"
+        stale.save()
+        print(f"superseded {stale.id}")
+        if not args.dry_run:
+            tg.send_message(f"Предыдущий драфт «{stale.meta['slug']}» остался без ответа — "
+                            f"заменяю его новым.")
 
     pillar = next_pillar(state, args.pillar)
     material_ref = ""

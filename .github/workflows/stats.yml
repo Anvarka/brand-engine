@@ -36,6 +36,12 @@ jobs:
           LINKEDIN_API_VERSION: ${{ vars.LINKEDIN_API_VERSION }}
         run: |
           python scripts/stats.py
+      - name: heartbeat
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python scripts/heartbeat.py
       - name: Commit state
         run: |
           ./scripts/commit_state.sh "stats: engagement snapshot"

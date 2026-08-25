@@ -82,17 +82,31 @@ def main() -> None:
         draft.save()
         return
 
+    image_urn, alt_text = "", draft.meta.get("image_alt", "")
+    image_name = draft.meta.get("image_path", "")
+    image_file = draft.path.parent / image_name if image_name else None
+    if image_file and image_file.exists() and not args.dry_run:
+        try:
+            image_urn = linkedin.upload_image(image_file)
+            print(f"uploaded image: {image_urn}")
+        except (linkedin.AccessDenied, RuntimeError) as error:
+            # The post matters more than its illustration - never fail the publish.
+            print(f"image upload failed, publishing text only: {error}")
+            tg.send_message(f"Картинку загрузить не удалось, публикую текстом.\n{error}")
+
     url = source_link(draft)
     body = text
     if url and placement() == "body":
         body = f"{text}\n\nSource: {url}"
 
     if args.dry_run:
-        print(json.dumps(linkedin.post_payload(body, args.visibility), indent=2, ensure_ascii=False))
+        preview = linkedin.post_payload(body, args.visibility,
+                                        "urn:li:image:DRYRUN" if image_file else "", alt_text)
+        print(json.dumps(preview, indent=2, ensure_ascii=False))
         print(f"\nsource link: {url or '(none)'} | placement: {placement()}")
         return
 
-    urn = linkedin.create_post(body, args.visibility)
+    urn = linkedin.create_post(body, args.visibility, image_urn, alt_text)
     attach_source(urn, url)
     draft.meta["post_urn"] = urn
     draft.meta["published_at"] = store.now()

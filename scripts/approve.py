@@ -15,6 +15,30 @@ from llm import load_env
 EXPIRE_HOURS = store.DRAFT_TTL_HOURS
 
 
+def attach_image(draft: store.Draft) -> None:
+    """Render the post's image once the variant is settled.
+
+    Doing this at approval rather than at drafting means the diagram always matches the
+    text that will actually be published, and nothing is rendered for drafts that get
+    skipped. A failure here must never block publishing.
+    """
+    import visual  # imported lazily: only an approval needs the renderer
+
+    try:
+        target = draft.path.with_suffix(".png")
+        path, spec = visual.build(draft.text(), draft.meta.get("pillar", ""), target)
+        draft.meta["image_path"] = path.name
+        draft.meta["image_alt"] = spec.alt_text.replace("\n", " ")[:200]
+        draft.meta["image_kind"] = spec.kind
+        draft.save()
+        tg.send_photo(path, f"Картинка к посту ({spec.kind}). Не нравится — жми «Переписать».")
+        print(f"rendered {spec.kind} image for {draft.id}")
+    except Exception as error:
+        print(f"  image rendering failed for {draft.id}: {error}")
+        tg.send_message(f"Картинку к «{draft.meta['slug']}» собрать не вышло ({error}). "
+                        f"Пост выйдет текстом.")
+
+
 def handle_callback(query: dict, state: dict) -> None:
     data = query.get("data", "")
     action, _, rest = data.partition(":")
@@ -100,6 +124,10 @@ def expire_stale() -> None:
             draft.meta["skip_reason"] = f"no answer within {EXPIRE_HOURS}h"
             draft.save()
             print(f"expired {draft.id}")
+            # Never let a state change happen silently: unexplained silence is
+            # indistinguishable from a broken pipeline.
+            tg.send_message(f"Драфт «{draft.meta['slug']}» снят: {EXPIRE_HOURS}ч без ответа. "
+                            f"Следующий придёт по расписанию.")
 
 
 def main() -> None:

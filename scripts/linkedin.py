@@ -49,8 +49,35 @@ def request(method: str, path: str, body: dict | None = None) -> tuple[dict, dic
         raise RuntimeError(message) from error
 
 
-def post_payload(text: str, visibility: str = "PUBLIC") -> dict[str, Any]:
-    return {
+def upload_image(path: str | Path) -> str:
+    """Three-step media flow: initialize, PUT the bytes, get back an image URN."""
+    body, _ = request("POST", "/rest/images?action=initializeUpload", {
+        "initializeUploadRequest": {"owner": os.environ["LINKEDIN_PERSON_URN"]},
+    })
+    value = body.get("value", {})
+    upload_url, image_urn = value.get("uploadUrl"), value.get("image")
+    if not upload_url or not image_urn:
+        raise RuntimeError(f"unexpected initializeUpload response: {body}")
+
+    put = urllib.request.Request(
+        upload_url,
+        data=Path(path).read_bytes(),
+        headers={"Authorization": f"Bearer {os.environ['LINKEDIN_ACCESS_TOKEN']}",
+                 "Content-Type": "image/png"},
+        method="PUT",
+    )
+    try:
+        with urllib.request.urlopen(put, timeout=120) as response:
+            if response.status not in (200, 201):
+                raise RuntimeError(f"image upload returned {response.status}")
+    except urllib.error.HTTPError as error:
+        raise RuntimeError(f"image upload failed: {error.code} {error.read().decode()}") from error
+    return image_urn
+
+
+def post_payload(text: str, visibility: str = "PUBLIC",
+                 image_urn: str = "", alt_text: str = "") -> dict[str, Any]:
+    payload: dict[str, Any] = {
         "author": os.environ["LINKEDIN_PERSON_URN"],
         "commentary": text,
         "visibility": visibility,
@@ -62,10 +89,15 @@ def post_payload(text: str, visibility: str = "PUBLIC") -> dict[str, Any]:
         "lifecycleState": "PUBLISHED",
         "isReshareDisabledByAuthor": False,
     }
+    if image_urn:
+        payload["content"] = {"media": {"id": image_urn, "altText": alt_text[:200] or "Diagram"}}
+    return payload
 
 
-def create_post(text: str, visibility: str = "PUBLIC") -> str:
-    _, headers = request("POST", "/rest/posts", post_payload(text, visibility))
+def create_post(text: str, visibility: str = "PUBLIC",
+                image_urn: str = "", alt_text: str = "") -> str:
+    _, headers = request("POST", "/rest/posts",
+                         post_payload(text, visibility, image_urn, alt_text))
     urn = headers.get("x-restli-id", "")
     if not urn:
         raise RuntimeError("post created but no x-restli-id header returned")
