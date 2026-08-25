@@ -24,6 +24,7 @@ LOCAL_MATERIAL = {
     "build_log": "build_log.md",
 }
 TOP_N_FEWSHOT = 3
+MIN_POST_CHARS = 400     # below this the generation clearly failed
 HALF_LIFE_DAYS = 7      # an idea is worth half as much a week after it appeared
 SUPERSEDE_HOURS = store.DRAFT_TTL_HOURS  # never let a stale draft block the next slot
 
@@ -58,6 +59,11 @@ def local_topic(pillar: str, state: dict) -> tuple[str, str] | None:
     for section in sections:
         title = section.splitlines()[0].strip()
         key = f"{pillar}:{title}"
+        # `## <short title> — <YYYY-MM>` is the format skeleton these files ship with.
+        # Drafting from it produces a post about nothing, so an unfilled file must look
+        # empty and let the caller fall back to the feed.
+        if "<" in title or ">" in title:
+            continue
         if key in used or len(section.strip()) < 200:
             continue
         return title, section.strip()[:8000]
@@ -320,6 +326,14 @@ def main() -> None:
     draft = store.Draft.create(slug=slug, pillar=pillar, idea=idea, source_url=material_ref)
     draft.meta["material_ref"] = material_ref
     variant_a, variant_b, critiques = generate_reviewed(pillar, idea, material)
+    if len(variant_a) < MIN_POST_CHARS and len(variant_b) < MIN_POST_CHARS:
+        # An empty or stub draft must never reach the approval queue - it wastes the slot
+        # and trains distrust of the whole channel.
+        print(f"generation produced nothing usable ({len(variant_a)}/{len(variant_b)} chars)")
+        if not args.dry_run:
+            tg.send_message(f"Генерация по теме «{slug}» дала пустой результат — "
+                            f"драфт не отправлен, слот пропущен. Смотри логи draft.")
+        return
     draft.body["variant_a"], draft.body["variant_b"] = variant_a, variant_b
     draft.body["ru_a"], draft.body["ru_b"] = translate(variant_a), translate(variant_b)
     draft.save()
