@@ -41,6 +41,13 @@ cp .env.example .env          # then fill it in
 .venv/bin/python scripts/course_extract.py      # refresh course_notes.md from the decks
 ```
 
+**Token refresh needs no computer.** `token-watch` sends the consent link to Telegram on
+day 53. Approve it on the phone, copy the code from
+<https://anvarka.github.io/brand-engine/callback.html>, and run the `reauth` workflow with
+it - it exchanges the code and rewrites the secrets itself. This needs a fine-grained PAT
+with `secrets: write` stored as `GH_PAT`, and the callback URL registered in the LinkedIn
+app. `scripts/auth_linkedin.py` stays as the local fallback.
+
 **LinkedIn access.** A personal account is not enough — the API needs a developer app,
 and LinkedIn requires every app to be attached to a Company Page you administer.
 
@@ -110,6 +117,32 @@ generated on the cheap model and is never published.
 *Переписать* asks for a note as a plain reply ("shorter", "lead with the number"); the next
 `draft` run regenerates from it. A draft nobody answers within 48 hours is skipped, and the
 slot goes to the next approved one.
+
+## Images
+
+Every post ships with a 1200x1500 image rendered by `scripts/visual.py`. The model supplies
+structure through Structured Outputs; the drawing is deterministic, because an illustration
+that misspells a metric costs more with this audience than plain graphics gain.
+
+| Kind | Renderer | Used for |
+|------|----------|----------|
+| `schema` | Graphviz `dot` | pipelines, architectures, failure paths - the default |
+| `code` | Pillow + Pygments | an implementation sketch, 8-18 lines |
+| `concept` | Pillow | opinion posts with no mechanism to draw |
+
+Rendering happens at **approval** time, not at drafting: the diagram then matches the exact
+variant that will be published, and nothing is drawn for drafts that get skipped. The image
+is sent to Telegram right after the tap, so it can still be rejected with *Переписать*.
+
+Verified against the live API: upload and image posts work on the self-serve tier. If the
+upload fails, or LinkedIn rejects the image at post time, the post goes out as text and
+Telegram says so - the post matters more than its illustration.
+
+Preview all three kinds without touching the pipeline:
+
+```bash
+.venv/bin/python scripts/visual.py --demo --out-dir /tmp
+```
 
 ## Source links
 

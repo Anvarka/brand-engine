@@ -106,7 +106,17 @@ def main() -> None:
         print(f"\nsource link: {url or '(none)'} | placement: {placement()}")
         return
 
-    urn = linkedin.create_post(body, args.visibility, image_urn, alt_text)
+    try:
+        urn = linkedin.create_post(body, args.visibility, image_urn, alt_text)
+    except RuntimeError as error:
+        if not image_urn:
+            raise
+        # The image can still be rejected at post time, after a clean upload. Losing the
+        # illustration is acceptable; losing the post is not.
+        print(f"post with image rejected, retrying without it: {error}")
+        tg.send_message(f"LinkedIn не принял картинку — публикую пост текстом.\n{str(error)[:300]}")
+        urn = linkedin.create_post(body, args.visibility)
+        image_urn = ""
     attach_source(urn, url)
     draft.meta["post_urn"] = urn
     draft.meta["published_at"] = store.now()
