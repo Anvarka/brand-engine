@@ -2,7 +2,7 @@
 id: 20260825-8c0ed931
 slug: mtia-300-meta-s-first-training-chip-with-built-i
 pillar: industry_teardown
-status: pending
+status: superseded
 created: 2026-08-25T20:02:02+00:00
 idea: For recommendation training, communication can be the bottleneck before matrix math is, so the transferable lesson is to profile all-reduce and parameter-exchange costs before assuming a better accelerator will help.  Why now: Meta has just published concrete details about MTIA 300’s NIC and communication-offload design, making this timely for teams planning ranking-model infrastructure.
 source_url: https://engineering.fb.com/2026/08/24/networking-traffic/mtia-300-meta-training-chip-built-in-nics/
@@ -12,6 +12,7 @@ rewrite_note:
 post_urn: 
 published_at: 
 material_ref: https://engineering.fb.com/2026/08/24/networking-traffic/mtia-300-meta-training-chip-built-in-nics/
+skip_reason: replaced by a newer draft
 ---
 
 <!-- variant_a -->
