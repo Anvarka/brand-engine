@@ -1,10 +1,11 @@
 {
   "tg_offset": 221545170,
-  "pillar_cursor": 5,
+  "pillar_cursor": 6,
   "awaiting_rewrite": "",
   "token_issued_at": "2026-08-22T22:42:48+00:00",
   "used_topics": [
     "recsys_101:Deep learning for recommender systems_ A Netflix case study",
-    "war_story:<short title> — <YYYY-MM>"
+    "war_story:<short title> — <YYYY-MM>",
+    "build_log:brand-engine — 2026-08"
   ]
 }
