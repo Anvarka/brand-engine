@@ -2,9 +2,9 @@
 id: 20260826-ef0d185d
 slug: popularity-bias-quietly-kills-the-long-tail
 pillar: hot_take
-status: pending
+status: skipped
 created: 2026-08-26T05:47:01+00:00
-idea: Most 'diversity' fixes trade measurable CTR for unmeasured retention, which is why they get rolled back.  Why now: 
+idea: Most 'diversity' fixes trade measurable CTR for unmeasured retention, which is why they get rolled back.  Why now:
 source_url: local://seed/9a7c3d7ed29c
 variant: 
 tg_message_id: 83
@@ -12,6 +12,7 @@ rewrite_note:
 post_urn: 
 published_at: 
 material_ref: local://seed/9a7c3d7ed29c
+skip_reason: no answer within 44h
 ---
 
 <!-- variant_a -->
