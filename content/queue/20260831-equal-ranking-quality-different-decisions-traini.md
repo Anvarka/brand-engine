@@ -2,7 +2,7 @@
 id: 20260831-cdf9c37f
 slug: equal-ranking-quality-different-decisions-traini
 pillar: paper_teardown
-status: pending
+status: skipped
 created: 2026-08-31T11:33:29+00:00
 idea: A reranker can win nDCG while producing materially different thresholded decisions, so production evaluation must measure retained-set stability and downstream decisions—not ranking quality alone—especially when scores depend on document order.  Why now: A fresh result exposes a failure mode in LLM rerankers that becomes more consequential as scores drive filtering, answer generation, and preference selection.
 source_url: https://arxiv.org/abs/2608.26762v1
@@ -12,6 +12,7 @@ rewrite_note:
 post_urn: 
 published_at: 
 material_ref: https://arxiv.org/abs/2608.26762v1
+skip_reason: no answer within 44h
 ---
 
 <!-- variant_a -->
